@@ -22,7 +22,7 @@ func TestAccRightScaleDeployment_basic(t *testing.T) {
 				Config: basicConfig,
 				Check: resource.ComposeTestCheckFunc(
 					testCheckRightScaleResourceExists(resourceName),
-					resource.TestCheckResourceAttr(resourceName, "name", "created-deployment-"+rString),
+					resource.TestCheckResourceAttr(resourceName, "name", "terraform-create-"+rString),
 					resource.TestCheckResourceAttr(resourceName, "description", "created"),
 				),
 			},
@@ -30,7 +30,7 @@ func TestAccRightScaleDeployment_basic(t *testing.T) {
 			{
 				Config: updatedConfig,
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr(resourceName, "name", "updated-deployment-"+rString),
+					resource.TestCheckResourceAttr(resourceName, "name", "terraform-update-"+rString),
 					resource.TestCheckResourceAttr(resourceName, "description", "updated"),
 				),
 			},
@@ -41,7 +41,7 @@ func TestAccRightScaleDeployment_basic(t *testing.T) {
 func testAccRightScaleDeployment_basic(rString string) string {
 	return fmt.Sprintf(`
 resource "rightscale_deployment" "deployment"  {
-	name = "created-deployment-%s"
+	name = "terraform-create-%s"
 	description = "created"
 }
 `, rString)
@@ -50,7 +50,7 @@ resource "rightscale_deployment" "deployment"  {
 func testAccRightScaleDeployment_update(rString string) string {
 	return fmt.Sprintf(`
 resource "rightscale_deployment" "deployment"  {
-	name = "updated-deployment-%s"
+	name = "terraform-update-%s"
 	description = "updated"
 }
 `, rString)

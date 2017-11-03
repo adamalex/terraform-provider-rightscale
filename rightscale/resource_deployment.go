@@ -48,13 +48,13 @@ func resourceDeploymentCreate(d *schema.ResourceData, m interface{}) error {
 
 func resourceDeploymentRead(d *schema.ResourceData, m interface{}) error {
 	client := m.(ProviderConfiguration).client
-	deployment, err := client.deploymentRead(d.Id())
+	resource, err := client.resourceRead(d.Id())
 	if err != nil {
 		return err
 	}
 
-	d.Set("name", deployment.Name)
-	d.Set("description", deployment.Description)
+	d.Set("name", (*resource)["name"])
+	d.Set("description", (*resource)["description"])
 	return nil
 }
 

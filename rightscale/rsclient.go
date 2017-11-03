@@ -2,14 +2,15 @@ package rightscale
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/mitchellh/mapstructure"
 	"gopkg.in/rightscale/rsc.v6/rsapi"
 	"gopkg.in/rightscale/rsc.v6/ss"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type RsClient struct {
@@ -19,13 +20,18 @@ type RsClient struct {
 	API           *ss.API
 }
 
-func (rsc *RsClient) deploymentRead(href string) (*Deployment, error) {
-	source := fmt.Sprintf(`define main() return $resource do
+func (rsc *RsClient) resourceRead(href string) (*map[string]interface{}, error) {
+	source := fmt.Sprintf(`define main() return $fields do
 		@resource = rs_cm.get(href: "%s")
-		$resource = {
-			name: @resource.name,
-			description: @resource.description
-		}
+		$resource = to_object(@resource)
+		$resource = $resource["details"][0]
+		$fields = {}
+		foreach $key in keys($resource) do
+			if !any?(["actions", "links", "locked", "server_tag_scope"], $key)
+			  $fields[$key] = $resource[$key]
+			end
+		end
+		$fields = to_json($fields)
 	end`, href)
 
 	process, err := rsc.processExecuteUntilComplete(source)
@@ -33,12 +39,14 @@ func (rsc *RsClient) deploymentRead(href string) (*Deployment, error) {
 		return nil, err
 	}
 
-	output := process.singleOutput().(map[string]interface{})
+	var resource map[string]interface{}
+	jsonResponse := process.singleOutput().(string)
+	err = json.Unmarshal([]byte(jsonResponse), &resource)
+	if err != nil {
+		return nil, err
+	}
 
-	return &Deployment{
-		Name:        output["name"].(map[string]interface{})["value"].(string),
-		Description: output["description"].(map[string]interface{})["value"].(string),
-	}, nil
+	return &resource, nil
 }
 
 func (rsc *RsClient) resourceExists(href string, account int, hostName string) (bool, error) {
@@ -180,14 +188,23 @@ func (rsc *RsClient) processExecuteUntilComplete(source string) (*ProcessMedia, 
 		if err != nil {
 			return nil, err
 		}
+
 		status := process.Status
-		if status != "running" {
+
+		waiting, err := regexp.MatchString("^(not_started|running)$", status)
+		if err != nil {
+			return nil, err
+		}
+
+		if !waiting {
 			if status == "completed" {
 				return process, nil
-			} else {
-				return nil, errors.New(fmt.Sprintf("cwf process status: %s\n%s", status, process.Tasks[0].Error.Message))
 			}
+
+			return nil, fmt.Errorf("cwf process status: %s\n%s", status, process.Tasks[0].Error.Message)
 		}
+
+		time.Sleep(1 * time.Second)
 	}
 }
 
