@@ -94,11 +94,8 @@ func (rsc *RsClient) resourceUpdate(href string, resource *Resource) error {
 	end`, href, strings.TrimSuffix((*resource).Type, "s"), resourceFields)
 
 	_, err = rsc.processExecuteUntilComplete(source)
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
 
 func (rsc *RsClient) resourceCreate(resource *Resource) (string, error) {
@@ -129,11 +126,8 @@ func (rsc *RsClient) resourceDelete(href string) error {
 	end`, href)
 
 	_, err := rsc.processExecuteUntilComplete(source)
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
 }
 
 func (rsc *RsClient) processRead(id, view string) (*ProcessMedia, error) {

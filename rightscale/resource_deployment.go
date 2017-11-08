@@ -2,6 +2,7 @@ package rightscale
 
 import (
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/mitchellh/mapstructure"
 	"reflect"
 )
 
@@ -43,8 +44,14 @@ func resourceDeploymentRead(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 
-	d.Set("name", (*resource)["name"])
-	d.Set("description", (*resource)["description"])
+	var deployment Deployment
+	err = mapstructure.Decode(resource, &deployment)
+	if err != nil {
+		return err
+	}
+
+	d.Set("name", deployment.Name)
+	d.Set("description", deployment.Description)
 	return nil
 }
 
@@ -61,8 +68,6 @@ func resourceDeploymentUpdate(d *schema.ResourceData, m interface{}) error {
 	}
 
 	err := client.resourceUpdate(d.Id(), resource)
-	if err != nil {
-		return err
-	}
-	return nil
+
+	return err
 }
