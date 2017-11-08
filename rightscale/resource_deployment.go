@@ -1,28 +1,18 @@
 package rightscale
 
 import (
-	"fmt"
 	"github.com/hashicorp/terraform/helper/schema"
+	"reflect"
 )
 
 func resourceDeployment() *schema.Resource {
 	return &schema.Resource{
+		Schema: resourceSchema(reflect.TypeOf(Deployment{})),
 		Create: resourceDeploymentCreate,
 		Read:   resourceDeploymentRead,
 		Update: resourceDeploymentUpdate,
-		Delete: resourceDeploymentDelete,
-		Exists: resourceDeploymentExists,
-
-		Schema: map[string]*schema.Schema{
-			"name": {
-				Type:     schema.TypeString,
-				Required: true,
-			},
-			"description": {
-				Type:     schema.TypeString,
-				Optional: true,
-			},
-		},
+		Delete: resourceDelete,
+		Exists: resourceExists,
 	}
 }
 
@@ -75,23 +65,4 @@ func resourceDeploymentUpdate(d *schema.ResourceData, m interface{}) error {
 		return err
 	}
 	return nil
-}
-
-func resourceDeploymentDelete(d *schema.ResourceData, m interface{}) error {
-	client := m.(ProviderConfiguration).client
-	err := client.resourceDelete(d.Id())
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func resourceDeploymentExists(d *schema.ResourceData, m interface{}) (bool, error) {
-	config := m.(ProviderConfiguration)
-	client := config.client
-	exists, err := client.resourceExists(d.Id(), config.accountNumber, config.apiHostname)
-	if err != nil {
-		return false, fmt.Errorf("could not check existence of %s: %+v", d.Id(), err)
-	}
-	return exists, nil
 }
